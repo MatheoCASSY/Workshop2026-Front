@@ -20,7 +20,7 @@ export async function localAuth(
   const session = await action(parsed.data.email, parsed.data.password);
   if (!session) return NextResponse.json({ error: failure.error }, { status: failure.status });
 
-  const res = NextResponse.json({ email: session.email });
+  const res = NextResponse.json({ email: session.email, groups: session.groups });
   res.cookies.set(SESSION_COOKIE, await signLocalSession(session), cookieOptions());
   return res;
 }

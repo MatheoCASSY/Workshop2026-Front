@@ -41,5 +41,6 @@ yarn-error.log*
 next-env.d.ts
 !.env.example
 
-# comptes d'auth locaux
-.local-auth/
+# comptes d'auth locaux (dev) : seul le jeu de comptes par defaut est versionne
+.local-auth/*
+!.local-auth/users.json

@@ -37,7 +37,9 @@ export default function LoginForm({ mode, authError }: { mode: "cognito" | "loca
       ) : (
         <form onSubmit={submit} className="space-y-3">
           <p className="rounded bg-yellow-100 p-2 text-sm text-yellow-800">
-            Mode local : comptes stockés dans .local-auth/ (dev uniquement)
+            Mode local : comptes en clair dans .local-auth/users.json (dev uniquement).
+            Par défaut : user@ / admin@ / editor@ / super@local.dev, mot de passe{" "}
+            <code>password</code>.
           </p>
           <input className="w-full rounded border p-2" type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
           <input className="w-full rounded border p-2" type="password" placeholder="Mot de passe (8 car. min)" value={password} onChange={(e) => setPassword(e.target.value)} required minLength={8} />
