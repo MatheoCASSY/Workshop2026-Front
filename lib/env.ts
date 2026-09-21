@@ -17,5 +17,13 @@ let cached: Env | undefined;
 
 /** Valide les variables d'environnement au premier appel (pas au build). */
 export function getEnv(): Env {
-  return (cached ??= envSchema.parse(process.env));
+  if (!cached) {
+    const parsed = envSchema.safeParse(process.env);
+    if (!parsed.success) {
+      const missing = parsed.error.issues.map((i) => i.path.join(".")).join(", ");
+      throw new Error(`Variables d'environnement manquantes ou invalides : ${missing}`);
+    }
+    cached = parsed.data;
+  }
+  return cached;
 }
