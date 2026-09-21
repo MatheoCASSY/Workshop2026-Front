@@ -37,6 +37,11 @@ export default function Home() {
     load();
   }
 
+  async function logout() {
+    const { redirect } = await fetch("/api/auth/logout", { method: "POST" }).then((r) => r.json());
+    window.location.href = redirect;
+  }
+
   async function removeUser(id: number) {
     await fetch(`/api/users/${id}`, { method: "DELETE" });
     load();
@@ -47,6 +52,7 @@ export default function Home() {
       <header>
         <h1 className="text-3xl font-bold">Workshop 2026</h1>
         <p className="text-gray-500">Next.js + API REST + MySQL + Supabase</p>
+        <button onClick={logout} className="mt-2 text-sm text-red-600 underline">Se déconnecter</button>
       </header>
 
       <section>
@@ -92,4 +98,5 @@ export default function Home() {
     </main>
   );
 }
+
 
