@@ -22,5 +22,9 @@ export async function proxy(req: NextRequest) {
 }
 
 export const config = {
-  matcher: ["/((?!_next/static|_next/image|favicon.ico|.*\\.(?:png|jpg|jpeg|svg|ico|webp)$).*)"],
+  // Les fichiers PWA (manifest, service worker, page hors-ligne) restent accessibles
+  // sans session : sinon l'appli n'est pas installable depuis l'écran /login.
+  matcher: [
+    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|sw.js|offline.html|.*\\.(?:png|jpg|jpeg|svg|ico|webp)$).*)",
+  ],
 };
