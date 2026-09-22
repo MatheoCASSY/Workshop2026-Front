@@ -99,7 +99,9 @@ export async function POST(request: Request) {
 
     if (incidentError) {
       return NextResponse.json(
-        { error: "Impossible de créer l'incident" },
+        { error: "Impossible de créer l'incident",
+          details: incidentError.message
+         },
         { status: 500 }
       );
     }
