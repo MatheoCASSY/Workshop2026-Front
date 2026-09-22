@@ -1,80 +1,209 @@
+"use client";
+
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import {
-  MEMBRES,
-  competence,
-  depuis,
-  equipement,
-  incident,
-  membre,
-  nomComplet,
-  refIncident,
-  zone,
-} from "@/lib/donnees-demo";
+import { notFound, useParams } from "next/navigation";
+import { useEffect, useState } from "react";
+import { refIncident } from "@/lib/donnees-demo";
 import { LIBELLE_CATEGORIE, LIBELLE_STATUT } from "@/lib/types";
-import { Panneau, Badge } from "@/components/ui";
+import { Panneau } from "@/components/ui";
 import { PastilleGravite, PastilleStatut } from "@/components/pastilles";
 
+type Membre = {
+  id_membre: number;
+  nom: string;
+  prenom: string;
+  role: string;
+};
+
+type Zone = {
+  id_zone: number;
+  nom: string;
+};
+
+type Equipement = {
+  id_equipement: number;
+  nom: string;
+};
+
+type Incident = {
+  id_incident: number;
+  titre: string;
+  description: string;
+  categorie: keyof typeof LIBELLE_CATEGORIE;
+  gravite: "mineure" | "majeure" | "critique";
+  statut: keyof typeof LIBELLE_STATUT;
+  date_creation: string;
+  date_modification: string | null;
+  date_resolution: string | null;
+  id_membre_declarant: number | null;
+  id_membre_responsable: number | null;
+  id_zone: number | null;
+  id_equipement: number | null;
+  description_resolution: string | null;
+  temps_passe: number | null;
+  materiel_utilise: string | null;
+  declarant: Membre | null;
+  responsable: Membre | null;
+  zone: Zone | null;
+  equipement: Equipement | null;
+};
+
+const ETAPES = ["ouvert", "assigne", "en_cours", "resolu", "clos"] as const;
+
+function depuisDate(date: string): string {
+  const heures = Math.floor(
+    (Date.now() - new Date(date).getTime()) / (1000 * 60 * 60),
+  );
+
+  if (heures < 1) return "il y a moins d'une heure";
+  if (heures < 24) return `il y a ${heures} h`;
+
+  const jours = Math.floor(heures / 24);
+  return `il y a ${jours} j`;
+}
+
 /** Petite ligne « libelle / valeur » repetee dans la fiche. */
-function Info({ label, children }: { label: string; children: React.ReactNode }) {
+function Info({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <div>
-      <div className="font-mono text-[11px] uppercase text-faible">{label}</div>
+      <div className="font-mono text-[11px] uppercase text-faible">
+        {label}
+      </div>
       <div className="text-sm">{children}</div>
     </div>
   );
 }
 
-// Ordre du cycle de vie, affiche comme une frise.
-const ETAPES = ["ouvert", "assigne", "en_cours", "resolu", "clos"] as const;
+export default function FicheIncident() {
+  const params = useParams();
+  const id = params.id as string;
 
-export default async function FicheIncident({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const i = incident(Number(id));
-  if (!i) notFound();
+  const [incident, setIncident] = useState<Incident | null>(null);
+  const [erreur, setErreur] = useState<string | null>(null);
+  const [chargement, setChargement] = useState(true);
 
-  const declarant = membre(i.id_membre_declarant);
-  const responsable = membre(i.id_membre_responsable);
-  const etapeActuelle = ETAPES.indexOf(i.statut);
+  useEffect(() => {
+    async function recupererIncident() {
+      try {
+        const response = await fetch(`/api/incidents/${id}`);
+        const donnees = await response.json();
+
+        if (!response.ok) {
+          throw new Error(
+            donnees.error ?? "Impossible de récupérer l'incident",
+          );
+        }
+
+        setIncident(donnees);
+      } catch (error) {
+        setErreur(
+          error instanceof Error
+            ? error.message
+            : "Une erreur est survenue",
+        );
+      } finally {
+        setChargement(false);
+      }
+    }
+
+    recupererIncident();
+  }, [id]);
+
+  if (chargement) {
+    return <p>Chargement de l'incident...</p>;
+  }
+
+  if (erreur) {
+    return (
+      <p className="rounded border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger">
+        {erreur}
+      </p>
+    );
+  }
+
+  if (!incident) {
+    notFound();
+  }
+
+  const etapeActuelle = ETAPES.indexOf(incident.statut);
 
   return (
     <div className="space-y-6">
-      <Link href="/incidents" className="font-mono text-xs text-faible hover:text-accent">
+      <Link
+        href="/incidents"
+        className="font-mono text-xs text-faible hover:text-accent"
+      >
         ← retour à la file
       </Link>
 
       <div className="flex flex-wrap items-center gap-3">
         <span className="font-mono text-xs text-faible">
-          {refIncident(i.id_incident)} · {LIBELLE_CATEGORIE[i.categorie]}
+          {refIncident(incident.id_incident)} ·{" "}
+          {LIBELLE_CATEGORIE[incident.categorie]}
         </span>
-        <PastilleGravite v={i.gravite} />
-        <PastilleStatut v={i.statut} />
-        <span className="font-mono text-[11px] text-faible">{depuis(i.creeIlYaH)}</span>
+
+        <PastilleGravite v={incident.gravite} />
+        <PastilleStatut v={incident.statut} />
+
+        <span className="font-mono text-[11px] text-faible">
+          {depuisDate(incident.date_creation)}
+        </span>
       </div>
 
-      <h1 className="text-2xl font-bold">{i.titre}</h1>
+      <h1 className="text-2xl font-bold">{incident.titre}</h1>
 
       <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
         <div className="space-y-6">
           <Panneau titre="// Description">
-            <p className="text-sm whitespace-pre-wrap text-attenue">{i.description}</p>
+            <p className="whitespace-pre-wrap text-sm text-attenue">
+              {incident.description}
+            </p>
           </Panneau>
 
           <Panneau titre="// Contexte">
             <div className="grid gap-4 sm:grid-cols-2">
-              <Info label="Zone">{zone(i.id_zone)?.nom ?? "—"}</Info>
-              <Info label="Équipement">{equipement(i.id_equipement)?.nom ?? "—"}</Info>
-              <Info label="Déclaré par">{nomComplet(declarant)}</Info>
-              <Info label="Horodatage">{depuis(i.creeIlYaH)}</Info>
+              <Info label="Zone">
+                {incident.zone?.nom ?? "—"}
+              </Info>
+
+              <Info label="Équipement">
+                {incident.equipement?.nom ?? "—"}
+              </Info>
+
+              <Info label="Déclaré par">
+                {incident.declarant
+                  ? `${incident.declarant.prenom} ${incident.declarant.nom}`
+                  : "—"}
+              </Info>
+
+              <Info label="Horodatage">
+                {new Date(incident.date_creation).toLocaleString("fr-FR")}
+              </Info>
             </div>
           </Panneau>
 
-          {i.description_resolution && (
+          {incident.description_resolution && (
             <Panneau titre="// Compte rendu">
               <div className="grid gap-4 sm:grid-cols-2">
-                <Info label="Résolution">{i.description_resolution}</Info>
-                <Info label="Temps passé">{i.temps_passe} min</Info>
-                <Info label="Matériel utilisé">{i.materiel_utilise ?? "—"}</Info>
+                <Info label="Résolution">
+                  {incident.description_resolution}
+                </Info>
+
+                <Info label="Temps passé">
+                  {incident.temps_passe !== null
+                    ? `${incident.temps_passe} min`
+                    : "—"}
+                </Info>
+
+                <Info label="Matériel utilisé">
+                  {incident.materiel_utilise ?? "—"}
+                </Info>
               </div>
             </Panneau>
           )}
@@ -82,49 +211,35 @@ export default async function FicheIncident({ params }: { params: Promise<{ id: 
 
         <div className="space-y-6">
           <Panneau titre="// Attribution">
-            {responsable ? (
+            {incident.responsable ? (
               <div className="flex items-center gap-3">
                 <div className="flex size-10 items-center justify-center rounded border border-bord font-mono text-sm text-accent">
-                  {(responsable.prenom[0] + responsable.nom[0]).toUpperCase()}
+                  {(
+                    incident.responsable.prenom[0] +
+                    incident.responsable.nom[0]
+                  ).toUpperCase()}
                 </div>
+
                 <div>
-                  <div className="text-sm">{nomComplet(responsable)}</div>
-                  <div className="font-mono text-[11px] text-faible">{responsable.role}</div>
+                  <div className="text-sm">
+                    {incident.responsable.prenom}{" "}
+                    {incident.responsable.nom}
+                  </div>
+
+                  <div className="font-mono text-[11px] text-faible">
+                    {incident.responsable.role}
+                  </div>
                 </div>
               </div>
             ) : (
               <p className="text-sm text-alerte">Non assigné</p>
             )}
-
-            <div className="mt-4">
-              <p className="font-mono text-[11px] uppercase text-faible">Compétences requises</p>
-              <div className="mt-1 flex flex-wrap gap-1">
-                {i.competences_requises.map((idc) => (
-                  <Badge key={idc}>{competence(idc)?.nom}</Badge>
-                ))}
-              </div>
-            </div>
-
-            <div className="mt-4">
-              <p className="font-mono text-[11px] uppercase text-faible">Réattribuer</p>
-              <select
-                defaultValue={i.id_membre_responsable ?? ""}
-                className="mt-1 w-full rounded border border-bord bg-panneau-2 px-2 py-1.5 text-sm"
-              >
-                <option value="">Non assigné</option>
-                {MEMBRES.filter((m) => m.statut === "actif").map((m) => (
-                  <option key={m.id_membre} value={m.id_membre}>
-                    {nomComplet(m)} — {m.role}
-                  </option>
-                ))}
-              </select>
-            </div>
           </Panneau>
 
           <Panneau titre="// Cycle de vie">
             <ol className="space-y-2">
-              {ETAPES.map((e, index) => (
-                <li key={e} className="flex items-center gap-3">
+              {ETAPES.map((etape, index) => (
+                <li key={etape} className="flex items-center gap-3">
                   <span
                     className={`size-2 rounded-full ${
                       index < etapeActuelle
@@ -134,12 +249,15 @@ export default async function FicheIncident({ params }: { params: Promise<{ id: 
                           : "bg-bord"
                     }`}
                   />
+
                   <span
                     className={`text-sm ${
-                      index === etapeActuelle ? "text-accent" : "text-faible"
+                      index === etapeActuelle
+                        ? "text-accent"
+                        : "text-faible"
                     }`}
                   >
-                    {LIBELLE_STATUT[e]}
+                    {LIBELLE_STATUT[etape]}
                   </span>
                 </li>
               ))}
