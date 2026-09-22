@@ -8,6 +8,7 @@ import {
 import { LIBELLE_CATEGORIE, type Categorie } from "@/lib/types";
 import { Panneau, Kpi, Badge } from "@/components/ui";
 import JaugeNiveau from "./jauge-niveau";
+import ModaleCompetence from "./modale-competence";
 
 const CATEGORIES = Object.keys(LIBELLE_CATEGORIE) as Categorie[];
 
@@ -52,11 +53,7 @@ export default function CompetencesPage() {
           <h1 className="text-2xl font-bold">Compétences et habilitations</h1>
           <p className="mt-1 font-mono text-xs text-faible">{"// Référentiel"}</p>
         </div>
-        {peutModifier && (
-          <button className="rounded border border-accent/40 bg-accent/10 px-4 py-2 text-sm text-accent hover:bg-accent/20">
-            + Ajouter une compétence
-          </button>
-        )}
+        {peutModifier && <ModaleCompetence libelle="+ Attribuer une compétence" />}
       </div>
 
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -135,9 +132,17 @@ export default function CompetencesPage() {
                               </span>
                             )}
                             {peutModifier && (
-                              <button className="ml-auto font-mono text-[11px] text-faible hover:text-accent">
-                                modifier
-                              </button>
+                              <span className="ml-auto">
+                                <ModaleCompetence
+                                  libelle="modifier"
+                                  variante="discret"
+                                  idMembre={t.id_membre}
+                                  idCompetence={c.id_competence}
+                                  niveau={t.niveau}
+                                  certification={t.certification}
+                                  dateExpiration={t.date_expiration}
+                                />
+                              </span>
                             )}
                           </li>
                         ))}
