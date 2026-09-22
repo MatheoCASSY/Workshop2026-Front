@@ -11,6 +11,7 @@ import { createServerClient } from "@supabase/ssr";
 export async function proxy(req: NextRequest) {
   let res = NextResponse.next({ request: req });
 
+<<<<<<< HEAD
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
@@ -27,6 +28,28 @@ export async function proxy(req: NextRequest) {
       },
     },
   );
+=======
+  // Ce depot est le front seul : tant que les variables Supabase ne sont pas
+  // renseignees, on laisse tout passer au lieu de planter. Les ecrans
+  // fonctionnent alors sur les donnees de lib/donnees-demo.ts.
+  // Des que .env.local est rempli, la protection ci-dessous s'active.
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const cle = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !cle) return res;
+
+  const supabase = createServerClient(url, cle, {
+    cookies: {
+      getAll: () => req.cookies.getAll(),
+      setAll: (cookiesToSet) => {
+        for (const { name, value } of cookiesToSet) req.cookies.set(name, value);
+        res = NextResponse.next({ request: req });
+        for (const { name, value, options } of cookiesToSet) {
+          res.cookies.set(name, value, options);
+        }
+      },
+    },
+  });
+>>>>>>> 59a62b969f106ce9f75a8a8d65c55f4a1a973868
 
   // getUser() et non getSession() : seul getUser() revalide le jeton auprès
   // de Supabase. getSession() fait confiance au cookie, falsifiable.
