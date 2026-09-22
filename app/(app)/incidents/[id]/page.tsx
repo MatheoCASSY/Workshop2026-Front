@@ -8,6 +8,7 @@ import { LIBELLE_CATEGORIE, LIBELLE_STATUT } from "@/lib/types";
 import { Panneau } from "@/components/ui";
 import { PastilleGravite, PastilleStatut } from "@/components/pastilles";
 
+
 type Membre = {
   id_membre: number;
   nom: string;
