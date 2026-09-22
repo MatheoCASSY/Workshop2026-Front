@@ -4,7 +4,6 @@ import { exigerSession } from "@/lib/garde";
 
 export const dynamic = "force-dynamic";
 
-// GET /api/membres -> equipage
 export async function GET() {
   const garde = await exigerSession();
   if (!garde.ok) return garde.reponse;

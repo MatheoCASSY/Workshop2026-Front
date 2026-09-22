@@ -20,7 +20,7 @@ export async function GET() {
     const { data: incidents, error } = await supabase
       .from("incident")
       .select("*")
-      .in("statut", ["ouvert", "assigne", "en_cours"]);
+      //.in("statut", ["ouvert", "assigne", "en_cours"]);
 
     if (error) {
       return NextResponse.json(
