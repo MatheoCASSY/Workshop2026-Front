@@ -1,12 +1,16 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import type { ResultSetHeader, RowDataPacket } from "mysql2";
 import { getDb } from "@/lib/db";
+import { exigerSession } from "@/lib/garde";
 import { userCreateSchema, userSchema } from "@/schemas/user";
 
 export const dynamic = "force-dynamic";
 type Ctx = { params: Promise<{ id: string }> };
 
 export async function GET(_req: Request, { params }: Ctx) {
+  const garde = await exigerSession();
+  if (!garde.ok) return garde.reponse;
+
   const { id } = await params;
   const [rows] = await getDb().query<RowDataPacket[]>(
     "SELECT id, name, email FROM users WHERE id = ?",
@@ -17,6 +21,9 @@ export async function GET(_req: Request, { params }: Ctx) {
 }
 
 export async function PUT(req: Request, { params }: Ctx) {
+  const garde = await exigerSession();
+  if (!garde.ok) return garde.reponse;
+
   const { id } = await params;
   const parsed = userCreateSchema.safeParse(await req.json().catch(() => null));
   if (!parsed.success) {
@@ -31,6 +38,9 @@ export async function PUT(req: Request, { params }: Ctx) {
 }
 
 export async function DELETE(_req: Request, { params }: Ctx) {
+  const garde = await exigerSession();
+  if (!garde.ok) return garde.reponse;
+
   const { id } = await params;
   const [res] = await getDb().execute<ResultSetHeader>("DELETE FROM users WHERE id = ?", [Number(id)]);
   if (res.affectedRows === 0) return NextResponse.json({ error: "Introuvable" }, { status: 404 });

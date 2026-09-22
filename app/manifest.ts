@@ -3,15 +3,15 @@ import type { MetadataRoute } from "next";
 /** Convention de fichier Next : sert /manifest.webmanifest. */
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: "Workshop 2026",
-    short_name: "W26",
-    description: "Application Workshop 2026",
+    name: "CrewDesk",
+    short_name: "CrewDesk",
+    description: "Gestion des incidents — Station Horizon",
     start_url: "/",
     scope: "/",
     display: "standalone",
     orientation: "portrait",
-    background_color: "#ffffff",
-    theme_color: "#000000",
+    background_color: "#05070f",
+    theme_color: "#4fd1ff",
     lang: "fr",
     icons: [
       { src: "/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },

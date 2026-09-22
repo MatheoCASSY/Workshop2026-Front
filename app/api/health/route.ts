@@ -1,10 +1,14 @@
-﻿import { NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getDb } from "@/lib/db";
-import { getSupabase } from "@/lib/supabase";
+import { createClient } from "@/lib/supabase/server";
+import { exigerSession } from "@/lib/garde";
 
 export const dynamic = "force-dynamic";
 
 export async function GET() {
+  const garde = await exigerSession();
+  if (!garde.ok) return garde.reponse;
+
   const status: Record<string, string> = {};
 
   try {
@@ -15,7 +19,7 @@ export async function GET() {
   }
 
   try {
-    const { error } = await getSupabase().auth.getSession();
+    const { error } = await (await createClient()).from("membre").select("id_membre").limit(1);
     status.supabase = error ? `erreur: ${error.message}` : "ok";
   } catch (e) {
     status.supabase = `erreur: ${(e as Error).message}`;
