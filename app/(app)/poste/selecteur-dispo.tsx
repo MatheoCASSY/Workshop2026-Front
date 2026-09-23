@@ -2,14 +2,8 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
-import { createClient } from "@/lib/supabase/client";
 import { LIBELLE_DISPO, type Disponibilite } from "@/lib/types";
 
-/**
- * Chacun change sa propre disponibilité.
- * La policy « chacun modifie sa fiche » l'autorise, et le trigger
- * protege_role() empêche d'en profiter pour changer son rôle au passage.
- */
 export default function SelecteurDispo({
   idMembre,
   disponibilite,
@@ -23,28 +17,48 @@ export default function SelecteurDispo({
 
   async function changer(nouvelle: Disponibilite) {
     const ancienne = valeur;
+
     setValeur(nouvelle);
     setErreur(null);
 
-    const { data, error } = await createClient()
-      .from("membre")
-      .update({ disponibilite: nouvelle })
-      .eq("id_membre", idMembre)
-      .select();
+    try {
+      const response = await fetch(`/api/membres/${idMembre}`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          disponibilite: nouvelle,
+        }),
+      });
 
-    if (error || data?.length === 0) {
+      const donnees = await response.json().catch(() => ({}));
+
+      if (!response.ok) {
+        throw new Error(
+          donnees.error ??
+            `Impossible de modifier la disponibilité (${response.status})`,
+        );
+      }
+
+      router.refresh();
+    } catch (error) {
       setValeur(ancienne);
-      setErreur(error?.message ?? "Refusé");
-      return;
+      setErreur(
+        error instanceof Error
+          ? error.message
+          : "Une erreur est survenue",
+      );
     }
-    router.refresh();
   }
 
   return (
     <div>
       <select
         value={valeur}
-        onChange={(e) => changer(e.target.value as Disponibilite)}
+        onChange={(event) =>
+          changer(event.target.value as Disponibilite)
+        }
         className="w-full rounded border border-bord bg-panneau-2 px-2 py-1.5 text-sm"
       >
         {Object.entries(LIBELLE_DISPO).map(([cle, libelle]) => (
@@ -53,7 +67,12 @@ export default function SelecteurDispo({
           </option>
         ))}
       </select>
-      {erreur && <p className="mt-1 text-xs text-danger">{erreur}</p>}
+
+      {erreur && (
+        <p className="mt-1 text-xs text-danger">
+          {erreur}
+        </p>
+      )}
     </div>
   );
 }

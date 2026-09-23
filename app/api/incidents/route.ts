@@ -20,7 +20,7 @@ export async function GET() {
     const { data: incidents, error } = await supabase
       .from("incident")
       .select("*")
-      .in("statut", ["ouvert", "assigne", "en_cours"]);
+      //.in("statut", ["ouvert", "assigne", "en_cours"]);
 
     if (error) {
       return NextResponse.json(
@@ -99,7 +99,9 @@ export async function POST(request: Request) {
 
     if (incidentError) {
       return NextResponse.json(
-        { error: "Impossible de créer l'incident" },
+        { error: "Impossible de créer l'incident",
+          details: incidentError.message
+         },
         { status: 500 }
       );
     }

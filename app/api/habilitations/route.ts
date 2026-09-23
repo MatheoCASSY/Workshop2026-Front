@@ -15,9 +15,20 @@ export async function GET() {
   const supabase = await createClient();
 
   const { data, error } = await supabase
-    .from("membre")
-    .select("*")
-    .order("nom");
+    .from("posseder")
+    .select(`
+      id_membre,
+      id_competence,
+      niveau,
+      certification,
+      date_expiration,
+      competence (
+        id_competence,
+        nom,
+        description,
+        categorie
+      )
+    `);
 
   if (error) {
     return NextResponse.json(
@@ -26,8 +37,5 @@ export async function GET() {
     );
   }
 
-  return NextResponse.json({
-    membres: data,
-    membreConnecte: garde.ctx.membre,
-  });
+  return NextResponse.json(data);
 }
