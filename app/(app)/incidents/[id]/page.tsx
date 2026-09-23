@@ -3,17 +3,23 @@
 import Link from "next/link";
 import { notFound, useParams } from "next/navigation";
 import { useEffect, useState } from "react";
+
 import { refIncident } from "@/lib/donnees-demo";
 import { LIBELLE_CATEGORIE, LIBELLE_STATUT } from "@/lib/types";
 import { Panneau } from "@/components/ui";
 import { PastilleGravite, PastilleStatut } from "@/components/pastilles";
-
+import ActionsIncident from "./actions";
 
 type Membre = {
   id_membre: number;
   nom: string;
   prenom: string;
   role: string;
+};
+
+type ReponseMembres = {
+  membres: Membre[];
+  membreConnecte: Membre | null;
 };
 
 type Zone = {
@@ -86,22 +92,36 @@ export default function FicheIncident() {
   const id = params.id as string;
 
   const [incident, setIncident] = useState<Incident | null>(null);
+  const [membres, setMembres] = useState<Membre[]>([]);
   const [erreur, setErreur] = useState<string | null>(null);
   const [chargement, setChargement] = useState(true);
 
   useEffect(() => {
-    async function recupererIncident() {
+    async function recupererDonnees() {
       try {
-        const response = await fetch(`/api/incidents/${id}`);
-        const donnees = await response.json();
+        const [incidentResponse, membresResponse] = await Promise.all([
+          fetch(`/api/incidents/${id}`),
+          fetch("/api/membres"),
+        ]);
 
-        if (!response.ok) {
+        const incidentData = await incidentResponse.json();
+        const membresData: ReponseMembres =
+          await membresResponse.json();
+
+        if (!incidentResponse.ok) {
           throw new Error(
-            donnees.error ?? "Impossible de récupérer l'incident",
+            incidentData.error ?? "Impossible de récupérer l'incident",
           );
         }
 
-        setIncident(donnees);
+        if (!membresResponse.ok) {
+          throw new Error(
+            membresData.error ?? "Impossible de récupérer les membres",
+          );
+        }
+
+        setIncident(incidentData);
+        setMembres(membresData.membres);
       } catch (error) {
         setErreur(
           error instanceof Error
@@ -113,7 +133,7 @@ export default function FicheIncident() {
       }
     }
 
-    recupererIncident();
+    recupererDonnees();
   }, [id]);
 
   if (chargement) {
@@ -212,29 +232,12 @@ export default function FicheIncident() {
 
         <div className="space-y-6">
           <Panneau titre="// Attribution">
-            {incident.responsable ? (
-              <div className="flex items-center gap-3">
-                <div className="flex size-10 items-center justify-center rounded border border-bord font-mono text-sm text-accent">
-                  {(
-                    incident.responsable.prenom[0] +
-                    incident.responsable.nom[0]
-                  ).toUpperCase()}
-                </div>
-
-                <div>
-                  <div className="text-sm">
-                    {incident.responsable.prenom}{" "}
-                    {incident.responsable.nom}
-                  </div>
-
-                  <div className="font-mono text-[11px] text-faible">
-                    {incident.responsable.role}
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <p className="text-sm text-alerte">Non assigné</p>
-            )}
+            <ActionsIncident
+              idIncident={incident.id_incident}
+              statut={incident.statut}
+              idResponsable={incident.id_membre_responsable}
+              membres={membres}
+            />
           </Panneau>
 
           <Panneau titre="// Cycle de vie">
