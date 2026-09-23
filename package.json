@@ -11,7 +11,8 @@
     "db:seed": "node --env-file=.env.local scripts/seed-users.mjs",
     "storage:check": "node --env-file=.env.local scripts/verifie-stockage.mjs",
     "db:check": "node --env-file=.env.local scripts/verifie-migrations.mjs",
-    "droits:check": "node --env-file=.env.local scripts/verifie-droits.mjs"
+    "droits:check": "node --env-file=.env.local scripts/verifie-droits.mjs",
+    "precharge:check": "node --env-file=.env.local scripts/verifie-prechargement.mjs"
   },
   "dependencies": {
     "@supabase/ssr": "^0.12.7",
