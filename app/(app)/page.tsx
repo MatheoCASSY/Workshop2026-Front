@@ -12,6 +12,11 @@ import { Panneau, Kpi } from "@/components/ui";
 import { PastilleDispo } from "@/components/pastilles";
 import LigneIncident from "@/components/ligne-incident";
 
+type ReponseMembres = {
+  membres: Membre[];
+  membreConnecte: Membre | null;
+};
+
 export default function TableauDeBord() {
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [membres, setMembres] = useState<Membre[]>([]);
@@ -27,7 +32,8 @@ export default function TableauDeBord() {
         ]);
 
         const incidentsData = await incidentsResponse.json();
-        const membresData = await membresResponse.json();
+        const membresData: ReponseMembres =
+          await membresResponse.json();
 
         if (!incidentsResponse.ok) {
           throw new Error(
@@ -42,7 +48,7 @@ export default function TableauDeBord() {
         }
 
         setIncidents(incidentsData);
-        setMembres(membresData);
+        setMembres(membresData.membres);
       } catch (error) {
         setErreur(
           error instanceof Error
@@ -58,7 +64,9 @@ export default function TableauDeBord() {
   }, []);
 
   const ouverts = incidents.filter(estEnCours);
-  const critiques = ouverts.filter((incident) => incident.gravite === "critique");
+  const critiques = ouverts.filter(
+    (incident) => incident.gravite === "critique",
+  );
   const nonAssignes = ouverts.filter(
     (incident) => !incident.id_membre_responsable,
   );
