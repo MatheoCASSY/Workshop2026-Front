@@ -59,8 +59,8 @@ export default function ActionsIncident({
         );
       }
 
-      router.refresh();
-    } catch (error) {
+window.location.reload();    
+} catch (error) {
       setErreur(
         error instanceof Error
           ? error.message
