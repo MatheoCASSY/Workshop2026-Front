@@ -7,6 +7,7 @@ import { LIBELLE_ROLE } from "@/lib/types";
 
 import { BandeauHorsLigne } from "@/components/hors-ligne";
 import SelecteurTheme from "@/components/selecteur-theme";
+import Prechargement from "@/components/prechargement";
 
 import Nav from "./nav";
 import MenuMobile from "./menu-mobile";
@@ -46,6 +47,7 @@ export default async function AppLayout({
         <Nav role={membre?.role ?? null} />
 
         <div className="ml-auto hidden items-center gap-4 md:flex">
+          <Prechargement membre={membre} />
           <SelecteurTheme compact />
 
           <div className="text-right">

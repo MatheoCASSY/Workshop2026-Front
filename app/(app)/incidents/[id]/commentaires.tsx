@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 
 import { dateHeure, initiales, nomComplet } from "@/lib/affichage";
+import { recupererAvecCache } from "@/lib/cache-hors-ligne";
 import type { Commentaire } from "@/lib/types";
 import { Panneau } from "@/components/ui";
 import { useEnLigne } from "@/components/hors-ligne";
@@ -27,6 +28,7 @@ export default function Commentaires({
   const [commentaires, setCommentaires] = useState<Commentaire[]>([]);
   const [chargement, setChargement] = useState(true);
   const [erreur, setErreur] = useState<string | null>(null);
+  const [depuisCache, setDepuisCache] = useState(false);
 
   const [texte, setTexte] = useState("");
   const [photos, setPhotos] = useState<File[]>([]);
@@ -43,23 +45,31 @@ export default function Commentaires({
 
     async function charger() {
       try {
-        const res = await fetch(`/api/incidents/${idIncident}/commentaires`);
-        const corps = await res.json().catch(() => null);
+        const res = await recupererAvecCache<{ commentaires: Commentaire[] }>(
+          `/api/incidents/${idIncident}/commentaires`,
+          {
+            cle: `commentaires-${idIncident}`,
+            erreur: "Impossible de charger le suivi",
+            // On garde le texte, pas les photos : elles sont derrière des URLs
+            // signées qui expirent en dix minutes, les conserver ne donnerait
+            // que des images cassées.
+            conserver: (corps) => ({
+              commentaires: (corps.commentaires ?? []).map((c) => ({
+                ...c,
+                photos: [],
+              })),
+            }),
+          },
+        );
 
-        if (!res.ok) {
-          throw new Error(corps?.error ?? "Impossible de charger le suivi");
-        }
+        if (annule) return;
 
-        if (!annule) setCommentaires(corps.commentaires ?? []);
+        setCommentaires(res.donnees.commentaires ?? []);
+        setDepuisCache(res.depuisCache);
       } catch (e) {
-        // Hors ligne, le fil n'est simplement pas disponible : les photos sont
-        // derrière des URLs signées qui expirent, les garder en cache n'aurait
-        // pas de sens.
         if (!annule) {
           setErreur(
-            e instanceof Error && navigator.onLine
-              ? e.message
-              : "Suivi indisponible hors ligne.",
+            e instanceof Error ? e.message : "Suivi indisponible hors ligne.",
           );
         }
       } finally {
@@ -144,6 +154,13 @@ export default function Commentaires({
       {!chargement && commentaires.length === 0 && (
         <p className="text-sm text-faible">
           Aucun commentaire pour l&apos;instant.
+        </p>
+      )}
+
+      {depuisCache && (
+        <p className="mb-3 rounded border border-alerte/40 bg-alerte/10 px-3 py-2 text-xs text-alerte">
+          Suivi hors ligne : le texte est conservé, les photos ne le sont pas
+          (leurs adresses expirent au bout de dix minutes).
         </p>
       )}
 
