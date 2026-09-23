@@ -13,19 +13,19 @@ export async function GET() {
     if (!user) {
       return NextResponse.json(
         { error: "Non authentifié" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
     const { data: incidents, error } = await supabase
       .from("incident")
-      .select("*")
-      //.in("statut", ["ouvert", "assigne", "en_cours"]);
+      .select("*");
+    //.in("statut", ["ouvert", "assigne", "en_cours"]);
 
     if (error) {
       return NextResponse.json(
         { error: "Impossible de récupérer les incidents" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -33,7 +33,7 @@ export async function GET() {
   } catch {
     return NextResponse.json(
       { error: "Une erreur est survenue" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -49,7 +49,7 @@ export async function POST(request: Request) {
     if (!user) {
       return NextResponse.json(
         { error: "Non authentifié" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -63,7 +63,7 @@ export async function POST(request: Request) {
           error: "Données invalides",
           details: result.error.issues,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -76,7 +76,7 @@ export async function POST(request: Request) {
     if (membreError || !membre) {
       return NextResponse.json(
         { error: "Membre non trouvé" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
@@ -99,10 +99,35 @@ export async function POST(request: Request) {
 
     if (incidentError) {
       return NextResponse.json(
-        { error: "Impossible de créer l'incident",
-          details: incidentError.message
-         },
-        { status: 500 }
+        {
+          error: "Impossible de créer l'incident",
+          details: incidentError.message,
+        },
+        { status: 500 },
+      );
+    }
+
+    const competencesNecessaires = incidentData.id_competences.map(
+      (id_competence) => ({
+        id_incident: incident.id_incident,
+        id_competence,
+      }),
+    );
+
+    const { error: necessiterError } = await supabase
+      .from("necessiter")
+      .insert(competencesNecessaires);
+
+    if (necessiterError) {
+      // L'incident a été créé mais ses compétences n'ont pas pu être
+      // enregistrées : on signale l'erreur plutôt que de faire comme si
+      // tout s'était bien passé.
+      return NextResponse.json(
+        {
+          error: "Incident créé mais impossible d'enregistrer les compétences requises",
+          details: necessiterError.message,
+        },
+        { status: 500 },
       );
     }
 
@@ -111,14 +136,14 @@ export async function POST(request: Request) {
         message: "Incident créé",
         incident,
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch {
     return NextResponse.json(
       {
         error: "Une erreur est survenue",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -4,7 +4,7 @@ import { createClient } from "@/lib/supabase/server";
 
 export async function PATCH(
   request: Request,
-  { params }: { params: Promise<{ id: string }> }
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const supabase = await createClient();
@@ -16,7 +16,7 @@ export async function PATCH(
     if (!user) {
       return NextResponse.json(
         { error: "Non authentifié" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -29,25 +29,24 @@ export async function PATCH(
     if (membreError || !membre) {
       return NextResponse.json(
         { error: "Membre non trouvé" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     if (membre.role !== "responsable" && membre.role !== "admin") {
       return NextResponse.json(
         { error: "Accès refusé" },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
     const { id } = await params;
-
     const incidentId = Number(id);
 
     if (!Number.isInteger(incidentId) || incidentId <= 0) {
       return NextResponse.json(
         { error: "Identifiant d'incident invalide" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -61,7 +60,7 @@ export async function PATCH(
           error: "Données invalides",
           details: result.error.issues,
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -77,21 +76,78 @@ export async function PATCH(
     if (technicienError || !technicien) {
       return NextResponse.json(
         { error: "Technicien non trouvé" },
-        { status: 404 }
+        { status: 404 },
       );
     }
 
     const { data: incident, error: incidentError } = await supabase
       .from("incident")
-      .select("*")
+      .select("id_incident")
       .eq("id_incident", incidentId)
       .single();
 
     if (incidentError || !incident) {
       return NextResponse.json(
         { error: "Incident non trouvé" },
-        { status: 404 }
+        { status: 404 },
       );
+    }
+
+    // Récupère les compétences nécessaires pour cet incident.
+    const { data: competencesRequises, error: competencesError } =
+      await supabase
+        .from("necessiter")
+        .select("id_competence")
+        .eq("id_incident", incidentId);
+
+    if (competencesError) {
+      return NextResponse.json(
+        {
+          error: "Impossible de récupérer les compétences requises",
+          details: competencesError.message,
+        },
+        { status: 500 },
+      );
+    }
+
+    // Vérifie que le technicien possède toutes les compétences requises.
+    if (competencesRequises.length > 0) {
+      const idsCompetencesRequises = competencesRequises.map(
+        (competence) => competence.id_competence,
+      );
+
+      const { data: competencesTechnicien, error: competencesTechnicienError } =
+        await supabase
+          .from("posseder")
+          .select("id_competence")
+          .eq("id_membre", technicianId)
+          .in("id_competence", idsCompetencesRequises);
+
+      if (competencesTechnicienError) {
+        return NextResponse.json(
+          {
+            error: "Impossible de vérifier les compétences du technicien",
+            details: competencesTechnicienError.message,
+          },
+          { status: 500 },
+        );
+      }
+
+      const nombreCompetencesPossedees =
+        competencesTechnicien.length;
+
+      if (
+        nombreCompetencesPossedees !==
+        idsCompetencesRequises.length
+      ) {
+        return NextResponse.json(
+          {
+            error:
+              "Ce technicien ne possède pas toutes les compétences requises pour cet incident",
+          },
+          { status: 400 },
+        );
+      }
     }
 
     const { data: incidentMisAJour, error: updateError } = await supabase
@@ -107,7 +163,7 @@ export async function PATCH(
     if (updateError || !incidentMisAJour) {
       return NextResponse.json(
         { error: "Impossible d'attribuer l'incident" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -119,14 +175,14 @@ export async function PATCH(
           technicianId,
         },
       },
-      { status: 200 }
+      { status: 200 },
     );
   } catch {
     return NextResponse.json(
       {
         error: "Une erreur est survenue",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

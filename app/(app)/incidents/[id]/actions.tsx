@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { LIBELLE_STATUT, type Statut } from "@/lib/types";
 
-type MembreSimple = {
+type Technicien = {
   id_membre: number;
   prenom: string;
   nom: string;
@@ -24,12 +24,12 @@ export default function ActionsIncident({
   idIncident,
   statut,
   idResponsable,
-  membres,
+  techniciens,
 }: {
   idIncident: number;
   statut: Statut;
   idResponsable: number | null;
-  membres: MembreSimple[];
+  techniciens: Technicien[];
 }) {
   const router = useRouter();
 
@@ -59,8 +59,8 @@ export default function ActionsIncident({
         );
       }
 
-window.location.reload();    
-} catch (error) {
+      window.location.reload();
+    } catch (error) {
       setErreur(
         error instanceof Error
           ? error.message
@@ -129,17 +129,21 @@ window.location.reload();
         >
           <option value="">Non assigné</option>
 
-          {membres
-            .filter((membre) => membre.role === "technicien")
-            .map((technicien) => (
-              <option
-                key={technicien.id_membre}
-                value={technicien.id_membre}
-              >
-                {technicien.prenom} {technicien.nom}
-              </option>
-            ))}
+          {techniciens.map((technicien) => (
+            <option
+              key={technicien.id_membre}
+              value={technicien.id_membre}
+            >
+              {technicien.prenom} {technicien.nom}
+            </option>
+          ))}
         </select>
+
+        {techniciens.length === 0 && (
+          <p className="text-xs text-faible">
+            Aucun technicien ne possède toutes les compétences requises.
+          </p>
+        )}
       </div>
 
       {suivant && (

@@ -31,8 +31,11 @@ export const createIncidentSchema = z.object({
   id_zone: z.number().int().positive().nullable().optional(),
 
   id_equipement: z.number().int().positive().nullable().optional(),
-});
 
+  id_competences: z
+    .array(z.number().int().positive())
+    .min(1, "Au moins une compétence est requise"),
+});
 
 export const incidentSchema = z.object({
   id_incident: z.number().int().positive(),
