@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { createClient } from "@/lib/supabase/client";
 import { versEmail } from "@/lib/identifiant";
+import SelecteurTheme from "@/components/selecteur-theme";
 
 const champ =
   "w-full rounded border border-bord bg-panneau-2 px-3 py-2 text-sm text-texte placeholder:text-faible";
@@ -12,6 +13,8 @@ export default function LoginForm({ authError }: { authError: boolean }) {
   const router = useRouter();
   const [identifiant, setIdentifiant] = useState("");
   const [motDePasse, setMotDePasse] = useState("");
+  const [nom, setNom] = useState("");
+  const [prenom, setPrenom] = useState("");
   const [inscription, setInscription] = useState(false);
   const [envoi, setEnvoi] = useState(false);
   const [message, setMessage] = useState<string | null>(
@@ -35,7 +38,15 @@ export default function LoginForm({ authError }: { authError: boolean }) {
       const res = await fetch("/api/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ identifiant, motDePasse }),
+        // Sans nom ni prenom, la fiche d equipage se remplit toute seule avec
+        // l identifiant et un prenom vide : l equipage affiche alors des demi-noms
+        // et des initiales a une lettre.
+        body: JSON.stringify({
+          identifiant,
+          motDePasse,
+          nom: nom.trim(),
+          prenom: prenom.trim(),
+        }),
       });
       if (!res.ok) {
         setEnvoi(false);
@@ -60,9 +71,15 @@ export default function LoginForm({ authError }: { authError: boolean }) {
 
   return (
     <main className="mx-auto mt-24 max-w-sm space-y-5 p-8">
-      <div>
-        <h1 className="text-2xl font-bold tracking-widest text-accent">CrewDesk</h1>
-        <p className="font-mono text-xs text-faible">Station Horizon · accès équipage</p>
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-bold tracking-widest text-accent">CrewDesk</h1>
+          <p className="font-mono text-xs text-faible">Station Horizon · accès équipage</p>
+        </div>
+
+        {/* Le choix du thème doit etre possible avant de se connecter :
+            il est garde sur l appareil, pas sur le compte. */}
+        <SelecteurTheme compact />
       </div>
 
       {erreur && (
@@ -88,6 +105,36 @@ export default function LoginForm({ authError }: { authError: boolean }) {
             autoComplete="username"
           />
         </label>
+
+        {inscription && (
+          <div className="grid gap-3 sm:grid-cols-2">
+            <label className="block space-y-1">
+              <span className="font-mono text-xs uppercase text-faible">Prénom</span>
+              <input
+                className={champ}
+                placeholder="Yuki"
+                value={prenom}
+                onChange={(e) => setPrenom(e.target.value)}
+                required
+                maxLength={100}
+                autoComplete="given-name"
+              />
+            </label>
+
+            <label className="block space-y-1">
+              <span className="font-mono text-xs uppercase text-faible">Nom</span>
+              <input
+                className={champ}
+                placeholder="Nakamura"
+                value={nom}
+                onChange={(e) => setNom(e.target.value)}
+                required
+                maxLength={100}
+                autoComplete="family-name"
+              />
+            </label>
+          </div>
+        )}
 
         <label className="block space-y-1">
           <span className="font-mono text-xs uppercase text-faible">Mot de passe</span>

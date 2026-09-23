@@ -13,6 +13,7 @@
 --    on peut décrire un membre qui n'a pas encore de compte.
 
 -- On repart de zéro à chaque migration : pratique en TP, à ne pas faire en prod.
+drop table if exists public.commentaire cascade;
 drop table if exists public.necessiter cascade;
 drop table if exists public.incident   cascade;
 drop table if exists public.equipement cascade;
@@ -120,6 +121,30 @@ create table public.necessiter (
 );
 
 -- ------------------------------------------------------------
+-- COMMENTAIRE : le fil de suivi d'un incident
+-- ------------------------------------------------------------
+-- Le technicien y écrit ce qu'il constate et ce qu'il fait, au fil de
+-- l'intervention. C'est l'historique du ticket, à ne pas confondre avec le
+-- compte rendu final (incident.description_resolution), qui n'est écrit qu'une
+-- fois, à la clôture.
+create table public.commentaire (
+  id_commentaire bigint generated always as identity primary key,
+  id_incident    bigint not null references public.incident (id_incident) on delete cascade,
+  -- on delete set null : si un membre quitte l'équipage, ses commentaires
+  -- restent, l'historique de l'incident ne doit pas disparaitre avec lui.
+  id_membre      bigint references public.membre (id_membre) on delete set null,
+  texte          text not null check (length(trim(texte)) > 0),
+  -- Chemins dans le bucket 'incidents' (db/003_storage.sql), pas des URLs :
+  -- le bucket est privé, les URLs sont signées à la lecture et expirent.
+  photos         text[] not null default '{}',
+  date_creation  timestamptz not null default now()
+);
+
+-- Le fil se lit toujours incident par incident, par ordre chronologique.
+create index commentaire_incident_idx
+  on public.commentaire (id_incident, date_creation);
+
+-- ------------------------------------------------------------
 -- Tenir date_modification à jour automatiquement
 -- ------------------------------------------------------------
 create or replace function public.touch_date_modification()
@@ -140,11 +165,15 @@ create trigger incident_touch
 -- security definer : la fonction s'exécute avec les droits de son créateur,
 -- sinon l'utilisateur qui vient de s'inscrire n'aurait pas le droit d'écrire
 -- dans public.membre.
+-- Un nouvel inscrit arrive en 'observateur' : il peut déclarer un incident et
+-- suivre ceux qu'il a déclarés, rien de plus. C'est à un admin de lui donner
+-- ensuite un vrai rôle. L'inverse (technicien par défaut) donnerait un accès
+-- aux tickets à quiconque crée un compte.
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer set search_path = '' as $$
 begin
-  insert into public.membre (user_id, nom, prenom)
-  values (new.id, split_part(new.email, '@', 1), '')
+  insert into public.membre (user_id, nom, prenom, role)
+  values (new.id, split_part(new.email, '@', 1), '', 'observateur')
   on conflict (user_id) do nothing;
   return new;
 end;

@@ -1,15 +1,20 @@
 @import "tailwindcss";
 
 /* ============================================================
-   Thème CrewDesk — couleurs relevées sur la maquette sci-fi.
+   Thème CrewDesk
    ============================================================
    @theme est la façon Tailwind v4 de déclarer des tokens : chaque
    --color-xxx crée automatiquement les classes bg-xxx, text-xxx,
-   border-xxx. Pas de fichier tailwind.config.js à maintenir.        */
+   border-xxx. Pas de fichier tailwind.config.js à maintenir.
+
+   Les valeurs ci-dessous sont celles du thème SOMBRE, relevées sur la
+   maquette d'origine. Le thème clair, plus bas, redéfinit exactement les
+   mêmes noms : aucun composant n'a donc à savoir quel thème est actif,
+   et il n'existe qu'un seul jeu de classes dans tout le projet.         */
 @theme {
   --color-fond: #05070f;        /* fond de page */
   --color-panneau: #0b1121;     /* cartes et panneaux */
-  --color-panneau-2: #111b30;   /* panneau surélevé */
+  --color-panneau-2: #111b30;   /* panneau surélevé, champs de saisie */
   --color-bord: #1d3f57;        /* bordures */
   --color-bord-doux: #16233d;   /* bordures discrètes */
 
@@ -26,6 +31,50 @@
   --font-mono: var(--font-jetbrains);
 }
 
+:root {
+  /* Hors @theme : ce token ne sert qu'au décor, il n'a pas à générer
+     de classes utilitaires. */
+  --grille: rgba(79, 209, 255, 0.05);
+
+  /* Accorde les éléments natifs (ascenseurs, sélecteurs de date, champs
+     de mot de passe) au thème. Sans ça, ils restent clairs sur fond noir. */
+  color-scheme: dark;
+}
+
+/* ------------------------------------------------------------
+   Thème clair
+   ------------------------------------------------------------
+   Un seul sélecteur suffit : le petit script de app/layout.tsx résout
+   « suivre le système » AVANT le premier rendu et pose toujours une
+   valeur concrète (clair ou sombre) sur <html>. La CSS n'a donc pas à
+   dupliquer la palette dans une media query.
+
+   Les couleurs ne sont pas les teintes sombres éclaircies : un cyan
+   #4fd1ff est illisible sur blanc. Accent, succès, alerte et danger ont
+   été assombris pour rester au-dessus de 4,5:1 sur les deux fonds, seuil
+   du contraste AA pour du petit texte — et l'appli en est pleine
+   (métadonnées en 11 px).                                              */
+:root[data-theme="clair"] {
+  --color-fond: #eef2f7;
+  --color-panneau: #ffffff;
+  --color-panneau-2: #e4ebf4;
+  --color-bord: #9db0c6;
+  --color-bord-doux: #d6e0eb;
+
+  --color-texte: #0c1728;
+  --color-attenue: #3d5270;
+  --color-faible: #56697f;      /* 5,6:1 sur blanc, 5,0:1 sur le fond */
+
+  --color-accent: #0369a1;      /* 5,9:1 sur blanc */
+  --color-succes: #047857;
+  --color-alerte: #a8540a;
+  --color-danger: #be123c;
+
+  --grille: rgba(3, 105, 161, 0.07);
+
+  color-scheme: light;
+}
+
 body {
   background: var(--color-fond);
   color: var(--color-texte);
@@ -39,7 +88,7 @@ body::before {
   inset: 0;
   pointer-events: none;
   background-image:
-    linear-gradient(to right, rgba(79, 209, 255, 0.05) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(79, 209, 255, 0.05) 1px, transparent 1px);
+    linear-gradient(to right, var(--grille) 1px, transparent 1px),
+    linear-gradient(to bottom, var(--grille) 1px, transparent 1px);
   background-size: 120px 120px;
 }

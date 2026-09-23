@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { LIBELLE_DISPO, type Disponibilite } from "@/lib/types";
+import { useEnLigne } from "@/components/hors-ligne";
 
 export default function SelecteurDispo({
   idMembre,
@@ -14,6 +15,7 @@ export default function SelecteurDispo({
   const router = useRouter();
   const [valeur, setValeur] = useState(disponibilite);
   const [erreur, setErreur] = useState<string | null>(null);
+  const enLigne = useEnLigne();
 
   async function changer(nouvelle: Disponibilite) {
     const ancienne = valeur;
@@ -56,10 +58,11 @@ export default function SelecteurDispo({
     <div>
       <select
         value={valeur}
+        disabled={!enLigne}
         onChange={(event) =>
           changer(event.target.value as Disponibilite)
         }
-        className="w-full rounded border border-bord bg-panneau-2 px-2 py-1.5 text-sm"
+        className="w-full rounded border border-bord bg-panneau-2 px-2 py-1.5 text-sm disabled:opacity-50"
       >
         {Object.entries(LIBELLE_DISPO).map(([cle, libelle]) => (
           <option key={cle} value={cle}>
@@ -67,6 +70,12 @@ export default function SelecteurDispo({
           </option>
         ))}
       </select>
+
+      {!enLigne && (
+        <p className="mt-1 text-xs text-alerte">
+          Hors ligne : le changement ne serait pas enregistré.
+        </p>
+      )}
 
       {erreur && (
         <p className="mt-1 text-xs text-danger">

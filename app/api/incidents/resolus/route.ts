@@ -1,64 +1,43 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { exigerDroit } from "@/lib/garde";
 import { resolvedIncidentSchema } from "@/schemas/resolved-incidents.schema";
 
+export const dynamic = "force-dynamic";
+
+/**
+ * L'historique des incidents terminés — une vue de pilotage, donc réservée à
+ * qui voit toute la file. Un technicien retrouve les siens sur « Mon poste ».
+ */
 export async function GET() {
-  try {
-    const supabase = await createClient();
+  const garde = await exigerDroit("incidents.voirTous");
+  if (!garde.ok) return garde.reponse;
 
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+  const supabase = await createClient();
 
-    if (!user) {
-      return NextResponse.json(
-        { error: "Non authentifié" },
-        { status: 401 }
-      );
-    }
+  const { data: incidents, error } = await supabase
+    .from("incident")
+    .select("*")
+    .in("statut", ["resolu", "clos"])
+    .order("date_creation", { ascending: false });
 
-    const { data: membre, error: membreError } = await supabase
-      .from("membre")
-      .select("id_membre, role")
-      .eq("user_id", user.id)
-      .single();
-
-    if (membreError || !membre) {
-      return NextResponse.json(
-        { error: "Membre non trouvé" },
-        { status: 404 }
-      );
-    }
-
-    if (membre.role !== "responsable") {
-      return NextResponse.json(
-        { error: "Accès refusé" },
-        { status: 403 }
-      );
-    }
-
-    const { data: incidents, error: incidentsError } = await supabase
-      .from("incident")
-      .select("*")
-      .in("statut", ["resolu", "clos"])
-      .order("date_creation", { ascending: false });
-
-    if (incidentsError) {
-      return NextResponse.json(
-        { error: "Impossible de récupérer les incidents résolus" },
-        { status: 500 }
-      );
-    }
-
-    const result = incidents.map((incident) =>
-      resolvedIncidentSchema.parse(incident)
-    );
-
-    return NextResponse.json(result, { status: 200 });
-  } catch {
+  if (error) {
     return NextResponse.json(
-      { error: "Une erreur est survenue" },
-      { status: 500 }
+      { error: "Impossible de récupérer les incidents résolus" },
+      { status: 500 },
     );
   }
+
+  // Le schéma décrit ce que l'API promet : une ligne qui n'y colle pas est un
+  // bug côté base, pas une réponse à renvoyer telle quelle.
+  const parsed = resolvedIncidentSchema.array().safeParse(incidents);
+
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: "Données inattendues en base", details: parsed.error.issues },
+      { status: 500 },
+    );
+  }
+
+  return NextResponse.json(parsed.data, { status: 200 });
 }

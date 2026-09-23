@@ -1,44 +1,20 @@
 import { NextResponse } from "next/server";
 import { assignIncidentSchema } from "@/schemas/incident-assignment.schema";
 import { createClient } from "@/lib/supabase/server";
+import { exigerDroit } from "@/lib/garde";
+
+export const dynamic = "force-dynamic";
 
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    // Désigner qui intervient est une décision d'encadrement.
+    const garde = await exigerDroit("incidents.attribuer");
+    if (!garde.ok) return garde.reponse;
+
     const supabase = await createClient();
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json(
-        { error: "Non authentifié" },
-        { status: 401 },
-      );
-    }
-
-    const { data: membre, error: membreError } = await supabase
-      .from("membre")
-      .select("id_membre, role")
-      .eq("user_id", user.id)
-      .single();
-
-    if (membreError || !membre) {
-      return NextResponse.json(
-        { error: "Membre non trouvé" },
-        { status: 404 },
-      );
-    }
-
-    if (membre.role !== "responsable" && membre.role !== "admin") {
-      return NextResponse.json(
-        { error: "Accès refusé" },
-        { status: 403 },
-      );
-    }
 
     const { id } = await params;
     const incidentId = Number(id);
