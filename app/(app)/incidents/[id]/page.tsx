@@ -110,13 +110,12 @@ export default function FicheIncident() {
 
         if (!incidentResponse.ok) {
           throw new Error(
-            incidentData.error ?? "Impossible de récupérer l'incident",
+          "Impossible de récupérer l'incident"
           );
         }
 
         if (!membresResponse.ok) {
-          throw new Error(
-            membresData.error ?? "Impossible de récupérer les membres",
+          throw new Error( "Impossible de récupérer les membres"
           );
         }
 

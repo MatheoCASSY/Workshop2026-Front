@@ -37,13 +37,13 @@ export default function TableauDeBord() {
 
         if (!incidentsResponse.ok) {
           throw new Error(
-            incidentsData.error ?? "Impossible de récupérer les incidents",
+          "Impossible de récupérer les incidents"
           );
         }
 
         if (!membresResponse.ok) {
           throw new Error(
-            membresData.error ?? "Impossible de récupérer les membres",
+          "Impossible de récupérer les membres"
           );
         }
 
