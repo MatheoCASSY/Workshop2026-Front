@@ -58,8 +58,9 @@ export async function POST(req: Request) {
   }
 
   // Le trigger on_auth_user_created a créé la fiche membre avec le rôle par
-  // défaut (technicien). On ne complète que le nom : le rôle ne doit JAMAIS
-  // venir du formulaire, sinon n'importe qui s'inscrirait administrateur.
+  // défaut (observateur : déclarer et suivre les siens, rien de plus). On ne
+  // complète que l'identité : le rôle ne doit JAMAIS venir du formulaire,
+  // sinon n'importe qui s'inscrirait administrateur.
   if (nom || prenom) {
     await admin
       .from("membre")

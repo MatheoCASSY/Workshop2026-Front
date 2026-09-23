@@ -1,34 +1,18 @@
 import Link from "next/link";
-import {
-  depuis,
-  membre,
-  nomComplet,
-  refIncident,
-  zone,
-  type Incident,
-} from "@/lib/donnees-demo";
+
+import { depuisDate, nomComplet, refIncident } from "@/lib/affichage";
+import type { IncidentListe } from "@/lib/types";
+
 import { PastilleGravite, PastilleStatut } from "./pastilles";
 
-type IncidentAvecDate = Incident & {
-  date_creation?: string;
-};
-
-function depuisDate(date: string): string {
-  const heures = Math.floor(
-    (Date.now() - new Date(date).getTime()) / (1000 * 60 * 60),
-  );
-
-  if (heures < 1) return "il y a moins d'une heure";
-  if (heures < 24) return `il y a ${heures} h`;
-
-  const jours = Math.floor(heures / 24);
-  return `il y a ${jours} j`;
-}
-
-/** Une ligne de la file des incidents. Reutilisee par plusieurs ecrans. */
-export default function LigneIncident({ i }: { i: IncidentAvecDate }) {
-  const resp = membre(i.id_membre_responsable);
-
+/**
+ * Une ligne de la file des incidents, réutilisée par plusieurs écrans.
+ *
+ * Les libellés (zone, responsable) viennent des jointures faites par
+ * GET /api/incidents, pas d'une résolution côté client : c'est la base qui sait
+ * qui est responsable de quoi.
+ */
+export default function LigneIncident({ i }: { i: IncidentListe }) {
   return (
     <Link
       href={`/incidents/${i.id_incident}`}
@@ -44,11 +28,9 @@ export default function LigneIncident({ i }: { i: IncidentAvecDate }) {
       <PastilleStatut v={i.statut} />
 
       <span className="font-mono text-[11px] text-faible">
-        {zone(i.id_zone)?.nom ?? "zone —"} ·{" "}
-        {resp ? nomComplet(resp) : "non assigné"} ·{" "}
-        {i.date_creation
-          ? depuisDate(i.date_creation)
-          : depuis(i.creeIlYaH)}
+        {i.zone?.nom ?? "zone —"} ·{" "}
+        {i.responsable ? nomComplet(i.responsable) : "non assigné"} ·{" "}
+        {depuisDate(i.date_creation)}
       </span>
     </Link>
   );

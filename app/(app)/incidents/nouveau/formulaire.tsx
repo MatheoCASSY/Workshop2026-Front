@@ -9,6 +9,8 @@ import {
   type Categorie,
   type Gravite,
 } from "@/lib/types";
+import { useEnLigne } from "@/components/hors-ligne";
+import { recupererAvecCache } from "@/lib/cache-hors-ligne";
 
 const CATEGORIES = Object.keys(LIBELLE_CATEGORIE) as Categorie[];
 const GRAVITES = Object.keys(LIBELLE_GRAVITE) as Gravite[];
@@ -101,40 +103,33 @@ export default function FormulaireIncident() {
   const [erreur, setErreur] = useState<string | null>(null);
   const [envoiEnCours, setEnvoiEnCours] = useState(false);
 
+  // Une déclaration part en base ou ne part pas : rien ici n'est mis en file
+  // d'attente. Autant le dire avant la saisie plutôt qu'après l'envoi.
+  const enLigne = useEnLigne();
+
   useEffect(() => {
     async function chargerDonnees() {
       try {
-        const [
-          zonesResponse,
-          equipementsResponse,
-          competencesResponse,
-        ] = await Promise.all([
-          fetch("/api/zones"),
-          fetch("/api/equipements"),
-          fetch("/api/competences"),
+        // Zones, équipements et compétences bougent rarement : on les garde
+        // pour que le formulaire reste remplissable sans réseau.
+        const [resZones, resEquipements, resCompetences] = await Promise.all([
+          recupererAvecCache<Zone[]>("/api/zones", {
+            cle: "zones",
+            erreur: "Impossible de récupérer les zones",
+          }),
+          recupererAvecCache<Equipement[]>("/api/equipements", {
+            cle: "equipements",
+            erreur: "Impossible de récupérer les équipements",
+          }),
+          recupererAvecCache<Competence[]>("/api/competences", {
+            cle: "competences",
+            erreur: "Impossible de récupérer les compétences",
+          }),
         ]);
 
-        const zonesData: Zone[] = await zonesResponse.json();
-        const equipementsData: Equipement[] =
-          await equipementsResponse.json();
-        const competencesData: Competence[] =
-          await competencesResponse.json();
-
-        if (!zonesResponse.ok) {
-          throw new Error("Impossible de récupérer les zones");
-        }
-
-        if (!equipementsResponse.ok) {
-          throw new Error("Impossible de récupérer les équipements");
-        }
-
-        if (!competencesResponse.ok) {
-          throw new Error("Impossible de récupérer les compétences");
-        }
-
-        setZones(zonesData);
-        setEquipements(equipementsData);
-        setCompetences(competencesData);
+        setZones(resZones.donnees);
+        setEquipements(resEquipements.donnees);
+        setCompetences(resCompetences.donnees);
       } catch (error) {
         setErreur(
           error instanceof Error
@@ -243,7 +238,7 @@ export default function FormulaireIncident() {
         href="/incidents"
         className="font-mono text-xs text-faible hover:text-accent"
       >
-        ← annuler
+        Annuler
       </Link>
 
       {/* En-tête plein cadre, différent des panneaux du reste de l'appli. */}
@@ -525,6 +520,14 @@ export default function FormulaireIncident() {
           </label>
         </Etape>
 
+        {!enLigne && (
+          <p className="mt-4 rounded border border-alerte/40 bg-alerte/10 px-4 py-3 text-sm text-alerte">
+            Hors ligne : la déclaration ne peut pas être enregistrée. Ta saisie
+            reste à l&apos;écran, l&apos;envoi redeviendra possible dès le
+            retour du réseau.
+          </p>
+        )}
+
         {erreur && (
           <p className="mt-4 rounded border border-danger/40 bg-danger/10 px-4 py-3 text-sm text-danger">
             {erreur}
@@ -533,14 +536,16 @@ export default function FormulaireIncident() {
 
         <button
           type="submit"
-          disabled={!complet || envoiEnCours}
+          disabled={!complet || envoiEnCours || !enLigne}
           className="mt-4 w-full rounded border border-accent/40 bg-accent/10 py-3 text-sm text-accent hover:bg-accent/20 disabled:cursor-not-allowed disabled:opacity-40"
         >
           {envoiEnCours
             ? "Envoi en cours..."
-            : complet
-              ? "Envoyer la déclaration"
-              : "Titre, description, catégorie et compétence requis"}
+            : !enLigne
+              ? "Envoi impossible hors ligne"
+              : complet
+                ? "Envoyer la déclaration"
+                : "Titre, description, catégorie et compétence requis"}
         </button>
       </form>
     </div>

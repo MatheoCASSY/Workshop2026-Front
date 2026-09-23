@@ -1,24 +1,24 @@
 import { NextResponse } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
+import { exigerDroit } from "@/lib/garde";
 
+export const dynamic = "force-dynamic";
+
+/**
+ * Les techniciens qualifiés pour un incident — la liste du sélecteur
+ * d'attribution. Seul l'encadrement attribue, donc seul l'encadrement a besoin
+ * de cette liste : elle expose qui possède quelles compétences.
+ */
 export async function GET(
   _request: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const garde = await exigerDroit("incidents.attribuer");
+    if (!garde.ok) return garde.reponse;
+
     const supabase = await createClient();
-
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
-
-    if (!user) {
-      return NextResponse.json(
-        { error: "Non authentifié" },
-        { status: 401 },
-      );
-    }
 
     const { id } = await params;
     const incidentId = Number(id);

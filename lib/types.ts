@@ -32,6 +32,41 @@ export type Incident = {
 
 export type Zone = { id_zone: number; nom: string; description: string | null };
 
+/** Référence courte d'un membre, telle que les jointures la renvoient. */
+export type MembreBref = {
+  id_membre: number;
+  prenom: string;
+  nom: string;
+  role: Role;
+};
+
+/**
+ * Un incident tel que le renvoie GET /api/incidents : avec les libellés joints
+ * plutôt que les seules clés étrangères. C'est ce que les écrans affichent —
+ * sans ça il faudrait résoudre les noms à la main dans chaque composant.
+ */
+export type IncidentListe = Incident & {
+  date_resolution: string | null;
+  description_resolution: string | null;
+  temps_passe: number | null;
+  materiel_utilise: string | null;
+  zone: { nom: string } | null;
+  equipement: { nom: string } | null;
+  declarant: MembreBref | null;
+  responsable: MembreBref | null;
+};
+
+/** Un commentaire du fil de suivi d'un incident. */
+export type Commentaire = {
+  id_commentaire: number;
+  id_incident: number;
+  texte: string;
+  date_creation: string;
+  auteur: MembreBref | null;
+  /** URLs signées, valables quelques minutes (le bucket est privé). */
+  photos: string[];
+};
+
 // Libellés affichés. Les valeurs en base restent sans accent (contraintes CHECK),
 // on fait la traduction ici, au seul endroit qui parle à l'utilisateur.
 export const LIBELLE_ROLE: Record<Role, string> = {

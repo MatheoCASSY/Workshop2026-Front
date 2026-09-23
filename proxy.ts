@@ -54,6 +54,6 @@ export const config = {
   // Les fichiers PWA restent accessibles sans session, sinon l'appli n'est
   // pas installable depuis l'écran /login.
   matcher: [
-    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|sw.js|offline.html|.*\.(?:png|jpg|jpeg|svg|ico|webp)$).*)",
+    "/((?!_next/static|_next/image|favicon.ico|manifest.webmanifest|sw.js|hors-ligne|.*\\.(?:png|jpg|jpeg|svg|ico|webp)$).*)",
   ],
 };

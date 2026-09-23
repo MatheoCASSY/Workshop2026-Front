@@ -3,6 +3,9 @@ import type { MetadataRoute } from "next";
 /** Convention de fichier Next : sert /manifest.webmanifest. */
 export default function manifest(): MetadataRoute.Manifest {
   return {
+    // `id` fige l'identité de l'appli installée : sans lui, changer start_url
+    // un jour ferait apparaitre une seconde icone au lieu d'en mettre à jour une.
+    id: "/",
     name: "CrewDesk",
     short_name: "CrewDesk",
     description: "Gestion des incidents — Station Horizon",

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
+import { peut, type Droit } from "@/lib/permissions";
 import type { Membre, Role } from "@/lib/types";
 
 /**
@@ -68,6 +69,29 @@ export async function exigerRole(roles: Role[]): Promise<Resultat> {
       ok: false,
       reponse: NextResponse.json(
         { error: `Réservé aux rôles : ${roles.join(", ")}` },
+        { status: 403 },
+      ),
+    };
+  }
+  return r;
+}
+
+/**
+ * Comme exigerRole, mais exprimé en droits plutôt qu'en rôles.
+ *
+ * À préférer : une route dit ce qu'elle exige (« editer les competences »), pas
+ * qui en a le droit. Le jour où un rôle gagne ou perd une permission, seul
+ * lib/permissions.ts change.
+ */
+export async function exigerDroit(droit: Droit): Promise<Resultat> {
+  const r = await exigerSession();
+  if (!r.ok) return r;
+
+  if (!peut(r.ctx.membre?.role, droit)) {
+    return {
+      ok: false,
+      reponse: NextResponse.json(
+        { error: "Vous n'avez pas les droits pour cette action" },
         { status: 403 },
       ),
     };
