@@ -17,9 +17,15 @@ type Membre = {
   role: string;
 };
 
-type ReponseMembres = {
-  membres: Membre[];
-  membreConnecte: Membre | null;
+type Technicien = {
+  id_membre: number;
+  nom: string;
+  prenom: string;
+  role: string;
+};
+
+type ReponseTechniciens = {
+  techniciens: Technicien[];
 };
 
 type Zone = {
@@ -92,35 +98,37 @@ export default function FicheIncident() {
   const id = params.id as string;
 
   const [incident, setIncident] = useState<Incident | null>(null);
-  const [membres, setMembres] = useState<Membre[]>([]);
+  const [techniciens, setTechniciens] = useState<Technicien[]>([]);
   const [erreur, setErreur] = useState<string | null>(null);
   const [chargement, setChargement] = useState(true);
 
   useEffect(() => {
     async function recupererDonnees() {
       try {
-        const [incidentResponse, membresResponse] = await Promise.all([
-          fetch(`/api/incidents/${id}`),
-          fetch("/api/membres"),
-        ]);
+        const [incidentResponse, techniciensResponse] =
+          await Promise.all([
+            fetch(`/api/incidents/${id}`),
+            fetch(`/api/incidents/${id}/techniciens`),
+          ]);
 
         const incidentData = await incidentResponse.json();
-        const membresData: ReponseMembres =
-          await membresResponse.json();
+        const techniciensData: ReponseTechniciens =
+          await techniciensResponse.json();
 
         if (!incidentResponse.ok) {
           throw new Error(
-          "Impossible de récupérer l'incident"
+            "Impossible de récupérer l'incident",
           );
         }
 
-        if (!membresResponse.ok) {
-          throw new Error( "Impossible de récupérer les membres"
+        if (!techniciensResponse.ok) {
+          throw new Error(
+            "Impossible de récupérer les techniciens",
           );
         }
 
         setIncident(incidentData);
-        setMembres(membresData.membres);
+        setTechniciens(techniciensData.techniciens);
       } catch (error) {
         setErreur(
           error instanceof Error
@@ -235,7 +243,7 @@ export default function FicheIncident() {
               idIncident={incident.id_incident}
               statut={incident.statut}
               idResponsable={incident.id_membre_responsable}
-              membres={membres}
+              techniciens={techniciens}
             />
           </Panneau>
 
