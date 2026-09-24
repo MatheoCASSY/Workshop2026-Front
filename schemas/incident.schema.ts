@@ -1,5 +1,28 @@
 import { z } from "zod";
 
+export const CATEGORIES = [
+  "electrique",
+  "mecanique",
+  "informatique",
+  "medical",
+  "structure",
+] as const;
+
+export const GRAVITES = [
+  "mineure",
+  "moderee",
+  "majeure",
+  "critique",
+] as const;
+
+export const STATUTS = [
+  "ouvert",
+  "assigne",
+  "en_cours",
+  "resolu",
+  "clos",
+] as const;
+
 export const createIncidentSchema = z.object({
   titre: z
     .string()
@@ -13,23 +36,10 @@ export const createIncidentSchema = z.object({
     .min(1, "La description est obligatoire")
     .max(2000, "La description ne peut pas dépasser 2000 caractères"),
 
-  categorie: z.enum([
-    "electrique",
-    "mecanique",
-    "informatique",
-    "medical",
-    "structure",
-  ]),
-
-  gravite: z.enum([
-    "mineure",
-    "moderee",
-    "majeure",
-    "critique",
-  ]),
+  categorie: z.enum(CATEGORIES),
+  gravite: z.enum(GRAVITES),
 
   id_zone: z.number().int().positive().nullable().optional(),
-
   id_equipement: z.number().int().positive().nullable().optional(),
 
   id_competences: z
@@ -45,9 +55,7 @@ export const createIncidentSchema = z.object({
  */
 export const majIncidentSchema = z
   .object({
-    statut: z
-      .enum(["ouvert", "assigne", "en_cours", "resolu", "clos"])
-      .optional(),
+    statut: z.enum(STATUTS).optional(),
 
     description_resolution: z
       .string()
@@ -56,8 +64,6 @@ export const majIncidentSchema = z
       .nullable()
       .optional(),
 
-    // En minutes. 10 000 min ≈ une semaine de travail : au-delà, c'est une
-    // faute de frappe plutôt qu'une intervention.
     temps_passe: z
       .number()
       .int()
@@ -83,26 +89,9 @@ export const incidentSchema = z.object({
   id_incident: z.number().int().positive(),
   titre: z.string(),
   description: z.string().nullable(),
-  categorie: z.enum([
-    "electrique",
-    "mecanique",
-    "informatique",
-    "medical",
-    "structure",
-  ]),
-  gravite: z.enum([
-    "mineure",
-    "moderee",
-    "majeure",
-    "critique",
-  ]),
-  statut: z.enum([
-    "ouvert",
-    "assigne",
-    "en_cours",
-    "resolu",
-    "clos",
-  ]),
+  categorie: z.enum(CATEGORIES),
+  gravite: z.enum(GRAVITES),
+  statut: z.enum(STATUTS),
   date_creation: z.string(),
   id_membre_declarant: z.number().int().positive().nullable(),
   id_membre_responsable: z.number().int().positive().nullable(),

@@ -1,4 +1,4 @@
-import { CATEGORIES, GRAVITES, STATUTS } from "@/schemas/incident";
+import { CATEGORIES, GRAVITES, STATUTS } from "@/schemas/incident.schema";
 import { ROLES, DISPONIBILITES } from "@/schemas/membre";
 
 /**
