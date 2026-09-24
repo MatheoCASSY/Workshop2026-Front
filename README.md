@@ -136,6 +136,7 @@ navigateur suive en PWA.
 | `npm run db:seed` | 20 comptes, 17 habilitations, 20 incidents, commentaires et photos |
 | `npm run storage:check` | Aller-retour réel sur le stockage : dépôt, URL signée, téléchargement, suppression |
 | `npm run droits:check` | 46 vérifications de la matrice des droits contre l'appli qui tourne |
+| `npm run precharge:check` | Rejoue le préchargement : chaque page d'un rôle, et les morceaux qu'elle référence |
 
 `droits:check` a besoin que l'appli tourne (`npm run dev` dans un autre
 terminal). Il se connecte avec de vraies sessions plutôt qu'avec la clé
@@ -179,6 +180,7 @@ lib/
   permissions.ts      qui a le droit de faire quoi — source unique
   garde.ts            contrôle du jeton et des droits, côté serveur
   cache-hors-ligne.ts cache client, filtré par rôle
+  prechargement.ts    chargement complet de l appli des la connexion
   affichage.ts        formatages partagés (sans import serveur)
   theme.ts            preference de theme et script anti-flash
   supabase/           clients navigateur, serveur, service_role
@@ -197,10 +199,20 @@ refuser une URL avant même d'envoyer le code de la page.
 
 L'appli est installable et reste consultable sans réseau.
 
-- **Le service worker** ([`public/sw.js`](public/sw.js)) garde la coquille :
-  pages HTML déjà visitées, JS, CSS, polices, icônes. Stratégie réseau d'abord,
-  cache en secours — on ne sert jamais un écran périmé quand la connexion est
-  là. Une page jamais ouverte en ligne tombe sur `/hors-ligne`.
+- **Tout est chargé d'avance, dès la connexion.** Il ne suffit pas d'archiver
+  ce qu'on a visité : quelqu'un qui perd le réseau sans être passé par « Mon
+  poste » tomberait sur l'écran de repli. [`lib/prechargement.ts`](lib/prechargement.ts)
+  va donc chercher, une fois l'écran affiché, tout ce que ce membre a le droit
+  de voir — listes, fiches, fils de suivi — puis demande au service worker
+  d'archiver les écrans correspondants.
+- **Archiver le HTML ne suffit pas.** Une page Next ne s'affiche qu'avec ses
+  morceaux de JavaScript et sa feuille de style, et ceux-là ne sont demandés
+  qu'à l'ouverture. Le service worker lit donc le HTML pour en extraire les
+  références `/_next/static/` et les télécharge aussi — polices comprises, sans
+  quoi les écrans s'ouvriraient nus.
+- **Le service worker** ([`public/sw.js`](public/sw.js)) sert ensuite ces pages
+  en réseau d'abord, cache en secours : on ne sert jamais un écran périmé quand
+  la connexion est là. Une page hors périmètre tombe sur `/hors-ligne`.
 - **Les données** ne passent pas par le service worker : il ne sait pas qui est
   connecté, il ne peut donc pas décider ce qu'un membre a le droit de garder.
   C'est [`lib/cache-hors-ligne.ts`](lib/cache-hors-ligne.ts) qui s'en charge,
