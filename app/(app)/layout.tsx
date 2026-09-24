@@ -8,6 +8,7 @@ import { LIBELLE_ROLE } from "@/lib/types";
 import { BandeauHorsLigne } from "@/components/hors-ligne";
 import SelecteurTheme from "@/components/selecteur-theme";
 import Prechargement from "@/components/prechargement";
+import SabreLaser from "@/components/sabre-laser";
 
 import Nav from "./nav";
 import MenuMobile from "./menu-mobile";
@@ -49,6 +50,7 @@ export default async function AppLayout({
         <div className="ml-auto hidden items-center gap-4 md:flex">
           <Prechargement membre={membre} />
           <SelecteurTheme compact />
+          <SabreLaser />
 
           <div className="text-right">
             <div className="text-sm">

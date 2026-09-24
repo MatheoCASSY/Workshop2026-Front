@@ -92,3 +92,11 @@ body::before {
     linear-gradient(to bottom, var(--grille) 1px, transparent 1px);
   background-size: 120px 120px;
 }
+
+/* Curseur sabre laser (components/sabre-laser.tsx) : le sabre dessiné
+   remplace le pointeur système. !important, car des éléments posent leur
+   propre curseur (cursor-pointer, cursor-default) qui le ferait réapparaître. */
+html.sabre-actif,
+html.sabre-actif * {
+  cursor: none !important;
+}
